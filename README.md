@@ -12,6 +12,18 @@ ninja -C build
 sudo ninja -C build install
 ```
 
+### Building in Docker
+
+```
+docker buildx create --use --name multiarch --node multiarch0
+docker buildx build --pull --load --progress plain --platform linux/amd64 -t wtype .
+
+# Copy binary out:
+CONTAINER_ID=$(docker create wtype)
+docker cp $CONTAINER_ID:/app/build/wtype wtype
+docker rm $CONTAINER_ID
+```
+
 ## Usage
 
 ```
