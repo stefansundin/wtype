@@ -6,6 +6,7 @@ xdotool type for wayland
 ## Building
 
 ```
+apt install libwayland-dev libxkbcommon-dev
 meson build
 ninja -C build
 sudo ninja -C build install

@@ -32,6 +32,7 @@ enum wtype_command_type {
 	WTYPE_COMMAND_BUTTON_RELEASE = 8,
 	WTYPE_COMMAND_BUTTON_CLICK = 9,
 	WTYPE_COMMAND_AXIS = 10,
+	WTYPE_COMMAND_MOUSE_MOVE = 11,
 };
 
 
@@ -81,7 +82,10 @@ struct wtype_command {
 			uint32_t axis;
 			wl_fixed_t value;
 		};
-
+		struct {
+			int dx;
+			int dy;
+		};
 	};
 };
 
@@ -372,8 +376,11 @@ static void parse_args(struct wtype *wtype, int argc, const char *argv[])
 				}
 				i++;
 				cmd->value = wl_fixed_from_double(atof(argv[i + 1]));
-			} 
-			else {
+			} else if (!strcmp("-mm", argv[i])) {
+				cmd->type = WTYPE_COMMAND_MOUSE_MOVE;
+				cmd->dx = atoi(argv[++i]);
+				cmd->dy = atoi(argv[i + 1]);
+			} else {
 				fail("Unknown parameter %s", argv[i]);
 			}
 			prefix_with_space = false;
@@ -552,6 +559,15 @@ static void run_click(struct wtype *wtype, struct wtype_command *cmd) {
 	usleep(2000);
 }
 
+static void run_mouse_move(struct wtype *wtype, struct wtype_command *cmd) {
+	zwlr_virtual_pointer_v1_motion(
+		wtype->pointer, 0,
+		wl_fixed_from_int(cmd->dx),
+		wl_fixed_from_int(cmd->dy));
+	zwlr_virtual_pointer_v1_frame(wtype->pointer);
+	wl_display_roundtrip(wtype->display);
+}
+
 static void run_commands(struct wtype *wtype)
 {
 	void (*handlers[])(struct wtype *, struct wtype_command *) = {
@@ -565,7 +581,8 @@ static void run_commands(struct wtype *wtype)
 		[WTYPE_COMMAND_BUTTON_PRESS] = run_button,
 		[WTYPE_COMMAND_BUTTON_RELEASE] = run_button,
 		[WTYPE_COMMAND_BUTTON_CLICK] = run_click,
-		[WTYPE_COMMAND_AXIS] = run_axis
+		[WTYPE_COMMAND_AXIS] = run_axis,
+		[WTYPE_COMMAND_MOUSE_MOVE] = run_mouse_move,
 	};
 	for (unsigned int i = 0; i < wtype->command_count; i++) {
 		handlers[wtype->commands[i].type](wtype, &wtype->commands[i]);
